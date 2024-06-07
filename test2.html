@@ -3,87 +3,25 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title>BT Thermal Print</title>
+	<title>Point of Sales</title>
+	<style>
+		body{margin:0;padding: 0}
+	</style>
 </head>
 <body>
-<button id="add" style="width:50px; height: 50px;">+</button>
-<button id="subtract" style="width:50px; height: 50px;">-</button>
-<div id="display" style="width: 400px;height: 200px;">0</div>
-
-<script src="scripts/jquery.js" type="text/javascript" charset="utf-8"></script>
- <script src="scripts/bootbox.min.js" type="text/javascript" charset="utf-8"></script>
-    <script>
-        $(document).ready(function () {
-            $("#setupPrint").click(function () {
-                if (isUrlValid($("#htmlSrc").val())) {
-                    $("#spnSrcObj").text($("#selUrlTp").val());
-                    $("#spnSrcUrl").text($("#htmlSrc").val());
-                    $("#spnNumCopies").text($("#numCopies").val());
-                    var href1 = "print://escpos.org/escpos/bt/print?srcTp=uri&srcObj=";
-                    var href2 = "&src=\"";
-                    var href3 = "\"";
-                    var href4 = "&numCopies=";
-                    var href = href1 + $("#selUrlTp").val() + href2 + encodeURIComponent($("#htmlSrc").val()) + href3 + href4 + $("#numCopies").val() ;
-                    $("#printMe").attr("href", href);
-                } else {
-                    bootbox.alert({
-                        title: "ESC/POS Bluetooth Print Service",
-                        message: "Entered URL is invalid, please enter fully qualified http/https URLs only",
-                    });
-                }
-            });
-            var ua = navigator.userAgent.toLowerCase();
-            if (ua.indexOf("android") == -1) {
-                $("a[href*='print://']").click(function () {
-                    //Handle for non Android Platforms, may be just window.print(); 
-                    //or your own code to handle.
-                    bootbox.alert({
-                        title: "ESC/POS Bluetooth Print Service",
-                        message: "print:// -> Print Protocol is only implemented in Android Platform",
-                    });
-                });
-            }
-        });
-
-        function isUrlValid(url) {
-            return /^(https?|s):\/\/(((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:)*@)?(((\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5])\.(\d|[1-9]\d|1\d\d|2[0-4]\d|25[0-5]))|((([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|\d|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.)+(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])*([a-z]|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])))\.?)(:\d*)?)(\/((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)+(\/(([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)*)*)?)?(\?((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|[\uE000-\uF8FF]|\/|\?)*)?(#((([a-z]|\d|-|\.|_|~|[\u00A0-\uD7FF\uF900-\uFDCF\uFDF0-\uFFEF])|(%[\da-f]{2})|[!\$&'\(\)\*\+,;=]|:|@)|\/|\?)*)?$/i
-                .test(url);
-        }
-        function generateDynamicHTML() {
-            var ua = navigator.userAgent.toLowerCase();
-            if (ua.indexOf("android") == -1) {
-                bootbox.alert({
-                        title: "ESC/POS Bluetooth Print Service",
-                        message: "print:// -> Print Protocol is only implemented in Android Platform",
-                    });
-                return;
-            }
-        let dynHtml = "print://escpos.org/escpos/bt/print?srcTp=uri&srcObj=html&src='data:text/html,";
-        dynHtml += "<h1 style='text-align:center'>PRINTING DYNAMICALLY GENERATED HTML</h1>";
-        dynHtml += "'";
-        window.location.href = dynHtml;
-    }
-
-    // Event listener for the "+" button
-$("#add").click(function () {
-    var currentValue = parseInt($("#display").text()); // Get the current value
-    currentValue += 1; // Increment the value
-    $("#display").text(currentValue); // Update the display
-    if (currentValue === 5) {
-        generateDynamicHTML(); // Call the function when value is 5
-    }
-});
-
-// Event listener for the "-" button
-$("#subtract").click(function () {
-    var currentValue = parseInt($("#display").text()); // Get the current value
-    currentValue -= 1; // Decrement the value
-    $("#display").text(currentValue); // Update the display
-    if (currentValue === 5) {
-        generateDynamicHTML(); // Call the function when value is 5
-    }
-});
-
-    </script>
+<iframe src="<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Point of Sales</title>
+	<style>
+		body{margin:0;padding: 0}
+	</style>
+</head>
+<body>
+<iframe src="https://script.google.com/macros/s/AKfycbzC3FyoGrdBVzE0ZyXmQGUqnnRNP8dnnPdO0Eqse8I/dev" width="100%" height="840"></iframe>
+</body>
+</html>" width="100%" height="840"></iframe>
 </body>
 </html>
