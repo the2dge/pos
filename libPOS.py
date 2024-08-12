@@ -4,6 +4,8 @@ import imutils
 import cv2
 import numpy as np
 from skimage.metrics import structural_similarity as compare_ssim
+bg_path = "home/ming/smartScale/images/bg.jpg"       # Path to the background image
+click_bg_path = "home/ming/smartScale/images/bg.jpg"  # Path to the click background image
 
 class desktop:
     def __init__(self, bg_path, click_bg_path):
