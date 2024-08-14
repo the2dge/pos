@@ -52,6 +52,12 @@ bg_img = cv2.resize(bg_img, (800, 480))  # Adjust to the screen resolution
 cv2.namedWindow(config['system']['name_win'], cv2.WND_PROP_FULLSCREEN)
 cv2.setWindowProperty(config['system']['name_win'], cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
 
+# Define the region where the webcam feed will be placed (coordinates need to match your layout)
+webcam_width = 640
+webcam_height = 480
+webcam_target_x = 0
+webcam_target_y = 120
+
 # Process each frame
 while True:
     ret, frame = cap.read()
@@ -60,10 +66,12 @@ while True:
     if flip_frame[1]:
         frame = cv2.flip(frame, 0)  # Vertical flip
 
-    height, width = frame.shape[:2]
+    # Resize the webcam feed to fit the target region
+    resized_frame = cv2.resize(frame, (webcam_width, webcam_height))
 
     # Prepare the frame for YOLO
-    blob = cv2.dnn.blobFromImage(frame, 1/255.0, (416, 416), swapRB=True, crop=False)
+    height, width = resized_frame.shape[:2]
+    blob = cv2.dnn.blobFromImage(resized_frame, 1/255.0, (416, 416), swapRB=True, crop=False)
     net.setInput(blob)
     layer_names = net.getUnconnectedOutLayersNames()
     detections = net.forward(layer_names)
@@ -88,7 +96,7 @@ while True:
                 class_ids.append(class_id)
 
     indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
-    
+
     # Place the webcam feed onto the background
     combined_frame = bg_img.copy()
     if len(indices) > 0:
@@ -97,11 +105,11 @@ while True:
             label = str(classes[class_ids[i]])
             confidence = confidences[i]
 
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(frame, f"{label}: {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            cv2.rectangle(resized_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+            cv2.putText(resized_frame, f"{label}: {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
             
             weight = get_weight()
-            cv2.putText(frame, f"Weight: {weight:.2f}g", (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+            cv2.putText(resized_frame, f"Weight: {weight:.2f}g", (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
             # Lookup price and calculate cost
             product_info = eval(config['products']['labels_tw']).get(label)
@@ -116,10 +124,11 @@ while True:
                 else:
                     cost = price  # Single item
 
-                cv2.putText(frame, f"Cost: NT$ {cost:.2f}", (x, y + h + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
+                cv2.putText(resized_frame, f"Cost: NT$ {cost:.2f}", (x, y + h + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
 
     # Overlay the detection frame onto the background image
-    combined_frame[120:120 + frame.shape[0], 150:150 + frame.shape[1]] = frame
+    combined_frame[webcam_target_y:webcam_target_y + resized_frame.shape[0],
+                   webcam_target_x:webcam_target_x + resized_frame.shape[1]] = resized_frame
 
     # Display the result frame
     cv2.imshow(config['system']['name_win'], combined_frame)
