@@ -32,11 +32,16 @@ if record_video:
     out = cv2.VideoWriter(video_out, fourcc, frame_rate, (int(cap.get(3)), int(cap.get(4))))
 
 # Initialize GPIO and HX711
-hx = HX711(dout_pin=5, pd_sck_pin=6)
-hx.set_scale_ratio(2280)  # You may need to calibrate this scale ratio
+hx = HX711(5, 6)  # Initialize with GPIO pin numbers
+hx.set_reading_format("MSB", "MSB")
+hx.set_reference_unit(2280)  # You may need to calibrate this
+hx.reset()
+hx.tare()  # Tare the scale
 
 def get_weight():
-    weight = hx.get_weight_mean(20)  # Take the average of 20 readings
+    weight = hx.get_weight(5)  # Take the average of 5 readings
+    hx.power_down()
+    hx.power_up()
     return max(0, weight)  # Return the weight, ensuring no negative values
 
 # Process each frame
