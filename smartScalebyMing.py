@@ -19,6 +19,13 @@ net = cv2.dnn.readNet(weights_path, cfg_path)
 with open(objnames_path, 'r') as f:
     classes = f.read().strip().split('\n')
 
+# Verify that classes are loaded correctly
+print("Classes loaded:", classes)
+
+# Load product labels from pos.ini
+labels_tw = eval(config['products']['labels_tw'])
+print("Product labels loaded:", labels_tw)
+
 # Load product labels from pos.ini
 labels_tw = eval(config['products']['labels_tw'])
 
@@ -79,6 +86,9 @@ while True:
     layer_names = net.getUnconnectedOutLayersNames()
     detections = net.forward(layer_names)
 
+    # Debug: Check detections
+    print("Detections:", detections)
+    
     class_ids = []
     confidences = []
     boxes = []
