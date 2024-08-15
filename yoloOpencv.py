@@ -143,10 +143,15 @@ class opencvYOLO:
                     labelsize.append(textsize)
                     boldcolor.append(bcolor)
                     textcolor.append(tcolor)
-
+        # Print lengths of lists for debugging
+        print(f"Boxes length: {len(boxes)}")
+        print(f"ClassIds length: {len(classIds)}")
+        print(f"Confidences length: {len(confidences)}")
+        print(f"indices length: {len(indices)}")
         # Perform non maximum suppression to eliminate redundant overlapping boxes with
         # lower confidences.
         indices = cv2.dnn.NMSBoxes(boxes, confidences, self.score, self.nms)
+        print(f"Indices: {indices}")
         if len(indices) == 0:
             print("No bounding boxes passed the NMS filter.")
             return
