@@ -1,45 +1,25 @@
 import cv2
 import numpy as np
-import RPi.GPIO as GPIO
 from hx711 import HX711
 import configparser
-import time
+from opencvYOLO import opencvYOLO
 
 # Load configuration from pos.ini
 config = configparser.ConfigParser()
 config.read('pos.ini')
 
-# Load YOLO model
-model_type = config['yoloModel']['modeltype']
-weights_path = config['yoloModel']['weights']
-cfg_path = config['yoloModel']['cfg']
-objnames_path = config['yoloModel']['objnames']
+# Initialize the YOLO model using the opencvYOLO class
+yolo = opencvYOLO(modeltype=config['yoloModel']['modeltype'],
+                  objnames=config['yoloModel']['objnames'],
+                  weights=config['yoloModel']['weights'],
+                  cfg=config['yoloModel']['cfg'])
 
-net = cv2.dnn.readNet(weights_path, cfg_path)
-with open(objnames_path, 'r') as f:
-    classes = f.read().strip().split('\n')
-
-# Verify that classes are loaded correctly
-print("Classes loaded:", classes)
+# Set detection parameters
+yolo.setScore(0.5)  # Set the confidence threshold
+yolo.setNMS(0.4)    # Set the non-maximum suppression threshold
 
 # Load product labels from pos.ini
 labels_tw = eval(config['products']['labels_tw'])
-print("Product labels loaded:", labels_tw)
-
-# Load product labels from pos.ini
-labels_tw = eval(config['products']['labels_tw'])
-
-# Initialize camera
-cam_id = int(config['camera']['cam_id'])
-flip_frame = eval(config['camera']['flipFrame'])
-record_video = config['camera'].getboolean('record_video')
-video_out = config['camera']['video_out']
-frame_rate = int(config['camera']['frame_rate'])
-
-cap = cv2.VideoCapture(cam_id)
-if record_video:
-    fourcc = cv2.VideoWriter_fourcc(*'XVID')
-    out = cv2.VideoWriter(video_out, fourcc, frame_rate, (int(cap.get(3)), int(cap.get(4))))
 
 # Initialize GPIO and HX711
 hx = HX711(5, 6)  # Initialize with GPIO pin numbers
@@ -54,90 +34,51 @@ def get_weight():
     hx.power_up()
     return max(0, weight)  # Ensure no negative values
 
-# Load background image and resize to fit the screen
-bg_img = cv2.imread('images/bg.jpg')
-bg_img = cv2.resize(bg_img, (800, 480))  # Adjust to the screen resolution
+# Initialize the camera
+cam_id = int(config['camera']['cam_id'])
+cap = cv2.VideoCapture(cam_id)
 
-# Hide the window frame
-cv2.namedWindow(config['system']['name_win'], cv2.WND_PROP_FULLSCREEN)
-cv2.setWindowProperty(config['system']['name_win'], cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_FULLSCREEN)
+# Set flip frame configuration
+flip_frame = eval(config['camera']['flipFrame'])
 
-# Define the region where the webcam feed will be placed (coordinates need to match your layout)
-webcam_width = 500
-webcam_height = 380
-webcam_target_x = 0
-webcam_target_y = 100
-
-# Process each frame
 while True:
     ret, frame = cap.read()
+    if not ret:
+        print("Failed to grab frame from camera.")
+        break
+    
     if flip_frame[0]:
         frame = cv2.flip(frame, 1)  # Horizontal flip
     if flip_frame[1]:
         frame = cv2.flip(frame, 0)  # Vertical flip
 
-    # Resize the webcam feed to fit the target region
-    resized_frame = cv2.resize(frame, (webcam_width, webcam_height))
+    # Perform object detection
+    yolo.getObject(frame, labelWant=("",), drawBox=True, bold=2, textsize=0.6, bcolor=(0,255,0), tcolor=(255,255,255))
 
-    # Prepare the frame for YOLO
-    height, width = resized_frame.shape[:2]
-    blob = cv2.dnn.blobFromImage(resized_frame, 1/255.0, (416, 416), swapRB=True, crop=False)
-    net.setInput(blob)
-    layer_names = net.getUnconnectedOutLayersNames()
-    detections = net.forward(layer_names)
-
-    # Debug: Check detections
-    print("Detections:", detections)
-    
-    class_ids = []
-    confidences = []
-    boxes = []
-
-    for output in detections:
-        for detection in output:
-            scores = detection[5:]
-            class_id = np.argmax(scores)
-            confidence = scores[class_id]
-            if confidence > 0.3:  # Confidence threshold
-                box = detection[0:4] * np.array([width, height, width, height])
-                (centerX, centerY, w, h) = box.astype("int")
-                x = int(centerX - (w / 2))
-                y = int(centerY - (h / 2))
-
-                boxes.append([x, y, int(w), int(h)])
-                confidences.append(float(confidence))
-                class_ids.append(class_id)
-
-    indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.3, 0.4)
-
-    # Place the webcam feed onto the background
-    combined_frame = bg_img.copy()
-    combined_frame[webcam_target_y:webcam_target_y + resized_frame.shape[0],
-                   webcam_target_x:webcam_target_x + resized_frame.shape[1]] = resized_frame
-
-    if len(indices) > 0:
-        for i in indices.flatten():
-            (x, y, w, h) = boxes[i]
-            label_id = str(classes[class_ids[i]])
-            confidence = confidences[i]
-
-            cv2.rectangle(resized_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            if label_id in labels_tw:
-                product_name = labels_tw[label_id][0]
-                cv2.putText(resized_frame, f"{product_name}: {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+    # Display the detected objects with labels
+    for i in range(len(yolo.bbox)):
+        left, top, width, height, label, score = yolo.list_Label(i)
+        if label in labels_tw:
+            product_name, price, unit = labels_tw[label]
+            weight = get_weight()
+            cost = 0
+            if unit == "twkg":
+                cost = weight * price / 600  # Convert to '台斤' unit
+            elif unit == "kg":
+                cost = weight * price / 1000  # Convert to kilograms
+            elif unit == "gram":
+                cost = weight * price  # Grams
             else:
-                cv2.putText(resized_frame, f"{label_id}: {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+                cost = price  # Single item
 
-    # Display the result frame
-    cv2.imshow(config['system']['name_win'], combined_frame)
+            text = f"{product_name}: NT$ {cost:.2f}, Weight: {weight:.2f}g"
+            cv2.putText(frame, text, (left, top - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 2)
+
+    # Display the resulting frame
+    cv2.imshow("Frame", frame)
     
-    if record_video:
-        out.write(combined_frame)
-
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 cap.release()
-if record_video:
-    out.release()
 cv2.destroyAllWindows()
