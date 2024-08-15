@@ -31,18 +31,18 @@ class opencvYOLO:
         self.nms = nms
 
     def getOutputsNames(self):
-    layersNames = self.net.getLayerNames()
-    unconnected_layers = self.net.getUnconnectedOutLayers()
+        layersNames = self.net.getLayerNames()
+        unconnected_layers = self.net.getUnconnectedOutLayers()
     
-    # Check if unconnected_layers is a list or array of indices or just a scalar
-    if isinstance(unconnected_layers, (np.ndarray, list)):
-        if len(unconnected_layers.shape) > 1:
-            return [layersNames[i[0] - 1] for i in unconnected_layers]
+        # Check if unconnected_layers is a list or array of indices or just a scalar
+        if isinstance(unconnected_layers, (np.ndarray, list)):
+            if len(unconnected_layers.shape) > 1:
+                return [layersNames[i[0] - 1] for i in unconnected_layers]
+            else:
+                return [layersNames[i - 1] for i in unconnected_layers]
         else:
-            return [layersNames[i - 1] for i in unconnected_layers]
-    else:
-        # If it's a scalar, treat it as a single layer index
-        return [layersNames[unconnected_layers - 1]]
+            # If it's a scalar, treat it as a single layer index
+            return [layersNames[unconnected_layers - 1]]
 
     def detect_objects(self, frame):
         blob = cv2.dnn.blobFromImage(frame, 1/255.0, (self.inpWidth, self.inpHeight), swapRB=True, crop=False)
