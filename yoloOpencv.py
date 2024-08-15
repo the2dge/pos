@@ -151,30 +151,25 @@ class opencvYOLO:
         # Perform non maximum suppression to eliminate redundant overlapping boxes with
         # lower confidences.
         indices = cv2.dnn.NMSBoxes(boxes, confidences, self.score, self.nms)
-        print(f"Indices: {indices}")
-        if len(indices) == 0:
-            print("No bounding boxes passed the NMS filter.")
-            return
-        nms_bboxes, nms_classIds, nms_confidences, nms_labelNames = [], [], [], []
+        indices = indices.flatten()  # This will ensure `indices` is 1D
 
-        for ind in indices:
-            i = ind[0]
-            box = boxes[i]
-            left = box[0]
-            top = box[1]
-            width = box[2]
-            height = box[3]
+        for i in indices:
+            if i < len(boxes):
+                box = boxes[i]
+                left = box[0]
+                top = box[1]
+                width = box[2]
+                height = box[3]
 
-            if(drawBox==True):
-                print(boxbold[i], boldcolor[i], textcolor[i], labelsize[i])
-                self.drawPred(frame, classIds[i], confidences[i], boxbold[i], boldcolor[i], textcolor[i],
-                    labelsize[i], left, top, left + width, top + height)
+                if drawBox:
+                    print(boxbold[i], boldcolor[i], textcolor[i], labelsize[i])
+                    self.drawPred(frame, classIds[i], confidences[i], boxbold[i], boldcolor[i], textcolor[i],
+                         labelsize[i], left, top, left + width, top + height)
 
-            nms_bboxes.append((left, top, width, height))
-            nms_classIds.append(i)
-            nms_confidences.append(confidences[i])
-            #print("TEST:", classIds[i], self.classes[classIds[i]])
-            nms_labelNames.append(self.classes[classIds[i]])
+                nms_bboxes.append((left, top, width, height))
+                nms_classIds.append(i)
+                nms_confidences.append(confidences[i])
+                nms_labelNames.append(self.classes[classIds[i]])
 
         self.indices = indices
         self.bbox = nms_bboxes
