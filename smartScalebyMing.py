@@ -19,6 +19,9 @@ net = cv2.dnn.readNet(weights_path, cfg_path)
 with open(objnames_path, 'r') as f:
     classes = f.read().strip().split('\n')
 
+# Load product labels from pos.ini
+labels_tw = eval(config['products']['labels_tw'])
+
 # Initialize camera
 cam_id = int(config['camera']['cam_id'])
 flip_frame = eval(config['camera']['flipFrame'])
@@ -54,9 +57,14 @@ cv2.setWindowProperty(config['system']['name_win'], cv2.WND_PROP_FULLSCREEN, cv2
 
 # Define the region where the webcam feed will be placed (coordinates need to match your layout)
 webcam_width = 500
-webcam_height = 480
+webcam_height = 380
 webcam_target_x = 0
-webcam_target_y = 0
+webcam_target_y = 100
+
+# Define the region for the weight display
+weight_x_start = 550
+weight_x_end = 750
+weight_y_start = 200  # Adjust as needed for vertical positioning
 
 # Process each frame
 while True:
