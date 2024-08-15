@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
-from hx711 import HX711
 import configparser
+from hx711 import HX711
 from opencvYOLO import opencvYOLO
 
 # Load configuration from pos.ini
