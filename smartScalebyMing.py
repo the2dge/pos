@@ -61,11 +61,6 @@ webcam_height = 380
 webcam_target_x = 0
 webcam_target_y = 100
 
-# Define the region for the weight display
-weight_x_start = 550
-weight_x_end = 750
-weight_y_start = 200  # Adjust as needed for vertical positioning
-
 # Process each frame
 while True:
     ret, frame = cap.read()
@@ -93,7 +88,7 @@ while True:
             scores = detection[5:]
             class_id = np.argmax(scores)
             confidence = scores[class_id]
-            if confidence > 0.5:  # Confidence threshold
+            if confidence > 0.3:  # Confidence threshold
                 box = detection[0:4] * np.array([width, height, width, height])
                 (centerX, centerY, w, h) = box.astype("int")
                 x = int(centerX - (w / 2))
@@ -103,40 +98,25 @@ while True:
                 confidences.append(float(confidence))
                 class_ids.append(class_id)
 
-    indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.5, 0.4)
+    indices = cv2.dnn.NMSBoxes(boxes, confidences, 0.3, 0.4)
 
     # Place the webcam feed onto the background
     combined_frame = bg_img.copy()
+    combined_frame[webcam_target_y:webcam_target_y + resized_frame.shape[0],
+                   webcam_target_x:webcam_target_x + resized_frame.shape[1]] = resized_frame
+
     if len(indices) > 0:
         for i in indices.flatten():
             (x, y, w, h) = boxes[i]
-            label = str(classes[class_ids[i]])
+            label_id = str(classes[class_ids[i]])
             confidence = confidences[i]
 
             cv2.rectangle(resized_frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
-            cv2.putText(resized_frame, f"{label}: {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-            
-            weight = get_weight()
-            cv2.putText(resized_frame, f"Weight: {weight:.2f}g", (x, y + h + 20), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-
-            # Lookup price and calculate cost
-            product_info = eval(config['products']['labels_tw']).get(label)
-            if product_info:
-                product_name, price, unit = product_info
-                if unit == "twkg":
-                    cost = weight * price / 600  # Convert to '台斤' unit
-                elif unit == "kg":
-                    cost = weight * price / 1000  # Convert to kilograms
-                elif unit == "gram":
-                    cost = weight * price  # Grams
-                else:
-                    cost = price  # Single item
-
-                cv2.putText(resized_frame, f"Cost: NT$ {cost:.2f}", (x, y + h + 40), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 255), 2)
-
-    # Overlay the detection frame onto the background image
-    combined_frame[webcam_target_y:webcam_target_y + resized_frame.shape[0],
-                   webcam_target_x:webcam_target_x + resized_frame.shape[1]] = resized_frame
+            if label_id in labels_tw:
+                product_name = labels_tw[label_id][0]
+                cv2.putText(resized_frame, f"{product_name}: {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+            else:
+                cv2.putText(resized_frame, f"{label_id}: {confidence:.2f}", (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
 
     # Display the result frame
     cv2.imshow(config['system']['name_win'], combined_frame)
