@@ -152,7 +152,7 @@ class opencvYOLO:
         # lower confidences.
         indices = cv2.dnn.NMSBoxes(boxes, confidences, self.score, self.nms)
         indices = indices.flatten()  # This will ensure `indices` is 1D
-
+        nms_bboxes, nms_classIds, nms_confidences, nms_labelNames = [], [], [], []
         for i in indices:
             if i < len(boxes):
                 box = boxes[i]
