@@ -64,11 +64,16 @@ class opencvYOLO:
     def getOutputsNames(self):
         layersNames = self.net.getLayerNames()
         unconnected_layers = self.net.getUnconnectedOutLayers()
-        if isinstance(unconnected_layers, (list, np.ndarray)) and len(unconnected_layers) > 0:
-            return [layersNames[i[0] - 1] for i in unconnected_layers]
+    
+        # Check if unconnected_layers is a list or array of indices or just a scalar
+        if isinstance(unconnected_layers, (np.ndarray, list)):
+            if len(unconnected_layers.shape) > 1:
+                return [layersNames[i[0] - 1] for i in unconnected_layers]
+            else:
+                return [layersNames[i - 1] for i in unconnected_layers]
         else:
-            print("Warning: No unconnected output layers found.")
-            return []
+            # If it's a scalar, treat it as a single layer index
+            return [layersNames[unconnected_layers - 1]]
             
     def iou(box_a, box_b):
 
