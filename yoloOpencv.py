@@ -74,7 +74,13 @@ class opencvYOLO:
         else:
             # If it's a scalar, treat it as a single layer index
             return [layersNames[unconnected_layers - 1]]
-            
+
+    def detect_objects(self, frame):
+        blob = cv2.dnn.blobFromImage(frame, 1/255.0, (self.inpWidth, self.inpHeight), swapRB=True, crop=False)
+        self.net.setInput(blob)
+        outs = self.net.forward(self.getOutputsNames())
+        return outs
+
     def iou(box_a, box_b):
 
         boxA = [box_a[0], box_a[1], box_a[2]-box_a[0], box_a[3]-box_a[1]]
@@ -141,6 +147,9 @@ class opencvYOLO:
         # Perform non maximum suppression to eliminate redundant overlapping boxes with
         # lower confidences.
         indices = cv2.dnn.NMSBoxes(boxes, confidences, self.score, self.nms)
+        if len(indices) == 0:
+            print("No bounding boxes passed the NMS filter.")
+            return
         nms_bboxes, nms_classIds, nms_confidences, nms_labelNames = [], [], [], []
 
         for ind in indices:
@@ -192,7 +201,7 @@ class opencvYOLO:
         net = self.net
         net.setInput(blob)
         # Runs the forward pass to get output of the output layers
-        outs = net.forward(self.getOutputsNames(net))
+        outs = self.net.forward(self.getOutputsNames())
         #print(outs)
         # Remove the bounding boxes with low confidence
         self.postprocess(frame, outs, labelWant, drawBox, bold, textsize, bcolor, tcolor)
