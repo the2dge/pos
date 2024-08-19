@@ -147,11 +147,16 @@ class opencvYOLO:
         print(f"Boxes length: {len(boxes)}")
         print(f"ClassIds length: {len(classIds)}")
         print(f"Confidences length: {len(confidences)}")
-        print(f"indices length: {len(indices)}")
+       
         # Perform non maximum suppression to eliminate redundant overlapping boxes with
         # lower confidences.
         indices = cv2.dnn.NMSBoxes(boxes, confidences, self.score, self.nms)
-        indices = indices.flatten()  # This will ensure `indices` is 1D
+
+        # Check if indices is a tuple
+        if isinstance(indices, tuple):
+            indices = indices[0]  # Access the first element if it's a tuple
+        elif isinstance(indices, np.ndarray):
+            indices = indices.flatten()  # Flatten if it's an array
         nms_bboxes, nms_classIds, nms_confidences, nms_labelNames = [], [], [], []
         for i in indices:
             if i < len(boxes):
