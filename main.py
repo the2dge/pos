@@ -23,7 +23,7 @@ cfg.read("pos.ini",encoding="utf-8")
 # Reading paths from pos.ini
 bg_path = cfg.get("desktop", "bg")
 click_bg_path = cfg.get("desktop", "click_bg")
-    
+
 cam_id = cfg.getint("camera", "cam_id")
 record_video = cfg.getboolean("camera", "record_video")
 video_out = cfg.get("camera", "video_out")
@@ -34,6 +34,7 @@ lang = cfg.get("operation", "lang")
 
 wait_for_next = cfg.getint("operation", "wait_for_next")
 cart_list_size = ast.literal_eval(cfg.get("desktop", "cart_list_size"))
+
 
 yolo = opencvYOLO(modeltype=cfg.get("yoloModel", "modeltype"), \
     objnames=cfg.get("yoloModel", "objnames"),\
@@ -60,8 +61,10 @@ labels_tw = ast.literal_eval(cfg.get("products", "labels_tw"))
 
 if(cfg.getboolean("system", "full_screen") is True):
     cv2.namedWindow(cfg.get("system", "name_win"), cv2.WND_PROP_FULLSCREEN)        # Create a named window
-    cv2.setWindowProperty(cfg.get("system", "name_win"), cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
-
+    #cv2.setWindowProperty(cfg.get("system", "name_win"), cv2.WND_PROP_FULLSCREEN,cv2.WINDOW_FULLSCREEN)
+    # Optionally, set the window to borderless mode (no title bar or borders)
+    cv2.setWindowProperty(cfg.get("system", "name_win"), cv2.WND_PROP_FULLSCREEN, cv2.WINDOW_NORMAL)
+    cv2.setWindowProperty(cfg.get("system", "name_win"), cv2.WND_PROP_NOFRAME, 1)
 detection = cfg.get("desktop", "detection_txt")
 #-------------------------------------------------------------------
 
@@ -208,10 +211,10 @@ def img_padding(img, mLength):
     
     return blank
 
-def click_caculate(event, x, y, flags, param):
+def click_calculate(event, x, y, flags, param):
     global YOLO, frozenScreen, cart_list
 
-    if((x>=525 and x<=700) and (y>=20 and y<=700)):
+    if((x>=525 and x<=700) and (y>=20 and y<=70)):
         if event == cv2.EVENT_LBUTTONDOWN:
             if(frozenScreen is True):
                 frozenScreen = False
@@ -230,11 +233,11 @@ def click_caculate(event, x, y, flags, param):
         cart_list = []
 
 cv2.namedWindow("BREADS_POS")
-cv2.setMouseCallback("BREADS_POS", click_caculate)
+cv2.setMouseCallback("BREADS_POS", click_calculate)
 
 if __name__ == "__main__":
-
-    weightDevice = weight_HX711(referenceUnit=195)
+    weight_unit = 'gram'  # Set a default value
+    weightDevice = weight_HX711(referenceUnit=410)
 
     INPUT = cv2.VideoCapture(cam_id)
 
