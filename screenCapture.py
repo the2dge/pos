@@ -5,7 +5,7 @@ import cv2
 preChar = "n"
 videoFile = "0"
 webCamSize = (1920, 1080)
-framesSavePath = "/media/sf_datasets/categories/breads_POS/negatives/"
+framesSavePath = "/home/ming/images/"
 resizeWidth = 0
 rotate = 0
 
