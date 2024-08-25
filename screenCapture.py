@@ -1,52 +1,41 @@
-import os
-import imutils
 import cv2
+import os
 
-preChar = "n"
-videoFile = "0"
-webCamSize = (1920, 1080)
-framesSavePath = "/home/ming/images/"
-resizeWidth = 0
-rotate = 0
+def save_frame(img, save_path, prefix="img", img_format=".jpg"):
+    if not os.path.exists(save_path):
+        os.makedirs(save_path)
 
-if not os.path.exists(framesSavePath):
-    os.makedirs(framesSavePath)
+    # Generate the filename based on the current number of images in the folder
+    file_index = len(os.listdir(save_path))
+    filename = f"{prefix}_{file_index:04d}{img_format}"
+    file_path = os.path.join(save_path, filename)
+
+    # Save the image
+    cv2.imwrite(file_path, img)
+    print(f"Image saved as {file_path}")
 
 # Initialize the camera
-if videoFile.isdigit():
-    camera = cv2.VideoCapture(int(videoFile))
-    camera.set(cv2.CAP_PROP_FRAME_WIDTH, webCamSize[0])
-    camera.set(cv2.CAP_PROP_FRAME_HEIGHT, webCamSize[1])
-else:
-    camera = cv2.VideoCapture(videoFile)
+camera = cv2.VideoCapture(0)
 
-# Check if the camera opened successfully
 if not camera.isOpened():
-    print("Error: Camera or video file could not be opened.")
-    sys.exit()
+    print("Error: Camera could not be opened.")
+    exit()
 
-i = 0
+save_path = "/home/ming/images/"  # Define the path to save the images
+
 while True:
-    grabbed, img = camera.read()
-    if not grabbed:
-        print("Frame not grabbed. Exiting...")
+    ret, frame = camera.read()
+    if not ret:
+        print("Failed to grab frame")
         break
 
-    if rotate > 0:
-        img = imutils.rotate_bound(img, rotate)
+    cv2.imshow("Camera Frame", frame)
 
-    cv2.imshow("Frame", imutils.resize(img, width=600))
     k = cv2.waitKey(1)
-    if k == 99:  # 'c' key to capture
-        filename = preChar + "_" + str(i).zfill(8) + ".jpg"
-        if resizeWidth > 0:
-            img = imutils.resize(img, width=resizeWidth)
-
-        cv2.imwrite(os.path.join(framesSavePath, filename), img)
-        print(f"{filename} saved.")
-        i += 1
-    elif k == 27:  # Escape key to exit
+    if k == ord('q'):  # Press 'q' to exit
         break
+    elif k == ord('c'):  # Press 'c' to capture the image
+        save_frame(frame, save_path)
 
 camera.release()
 cv2.destroyAllWindows()
